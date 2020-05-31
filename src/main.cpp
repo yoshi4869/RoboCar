@@ -14,11 +14,13 @@
 #define LEDC_BASE_FREQ 10000
 #define MAX_SPEED 3
 #define MIN_SPEED -1
-#define ANGLE_STEP 6
-#define ANGLE_MAX 18
+#define ANGLE_MAX 1
+#define ANGLE_MIN -1
 #define MAX_WAIT 20000
 #define MIN_DIST 0.3
-#define LED_PIN 5
+#define LED_PIN_BT 5
+#define LED_PIN_Right 16
+#define LED_PIN_Left 17
 // Bluetoothシリアルに付ける名前
 const char *btname = "ESP32Car";
 // 速度・角度・距離を保存するグローバル変数
@@ -31,7 +33,7 @@ BluetoothSerial SerialBT;
 void read_bt(){
   // Bluetoothシリアルから文字を受信しているかどうかを判断する
   if (SerialBT.available()){
-    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(LED_PIN_BT, HIGH);
     // Bluetoothシリアルから1文字読み込む
     int ch = SerialBT.read();
     Serial.print("Bluetooth :");
@@ -51,16 +53,16 @@ void read_bt(){
     }
     // 文字がdのとき
     else if (ch == 'd'){
-      // angleがANGLE_MAXより小さければANGLE_STEPだけ増やす(ハンドルを右にきる)
+      // angleがANGLE_MAXより小さければ1増やす(ハンドルを右にきる)
       if (angle < ANGLE_MAX){
-        angle += ANGLE_STEP;
+        angle++;
       }
     }
     // 文字がsのとき
     else if (ch == 's'){
-      // angleがANGLE_MAXより大きければANGLE_STEPだけ減らす(ハンドルを左にきる)
-      if (angle > -ANGLE_MAX){
-        angle -= ANGLE_STEP;
+      // angleがANGLE_MAXより大きければ1減らす(ハンドルを左にきる)
+      if (angle > ANGLE_MIN){
+        angle--;
       }
     }
     // 文字がiのとき
@@ -69,8 +71,13 @@ void read_bt(){
       speed = 0;
       angle = 0;
     }
+    Serial.print("speed: ");
+    Serial.print(speed);
+    Serial.print(" ,");
+    Serial.print("angle: ");
+    Serial.println(angle);
   }
-  digitalWrite(LED_PIN, LOW);
+  digitalWrite(LED_PIN_BT, LOW);
 }
 
 void read_distance(){
@@ -86,8 +93,8 @@ void read_distance(){
   }
   // 距離を求める
   dist = (time / 1000 / 1000) / 2 * 340;
-  Serial.print("Distance :");
-  Serial.println(dist);
+  //Serial.print("Distance: ");
+  //Serial.println(dist);
 }
 
 void operate_motor(){
@@ -97,6 +104,8 @@ void operate_motor(){
     digitalWrite(AIN2,LOW);
     digitalWrite(BIN1,HIGH);
     digitalWrite(BIN2,LOW);
+    digitalWrite(LED_PIN_Right,LOW);
+    digitalWrite(LED_PIN_Left,LOW);
   }
   // speedがマイナスの場合
   else if(speed < 0){
@@ -104,6 +113,26 @@ void operate_motor(){
     digitalWrite(AIN2,HIGH);
     digitalWrite(BIN1,LOW);
     digitalWrite(BIN2,HIGH);
+    digitalWrite(LED_PIN_Right,HIGH);
+    digitalWrite(LED_PIN_Left,HIGH);
+  }
+  // angleがプラスの場合
+  else if(angle > 0 && dist > MIN_DIST){
+    digitalWrite(AIN1,HIGH);
+    digitalWrite(AIN2,LOW);
+    digitalWrite(BIN1,LOW);
+    digitalWrite(BIN2,HIGH);
+    digitalWrite(LED_PIN_Right,HIGH);
+    digitalWrite(LED_PIN_Left,LOW);
+  }
+  // angleがマイナスの場合
+  else if(angle < 0 && dist > MIN_DIST){
+    digitalWrite(AIN1,LOW);
+    digitalWrite(AIN2,HIGH);
+    digitalWrite(BIN1,HIGH);
+    digitalWrite(BIN2,LOW);
+    digitalWrite(LED_PIN_Right,LOW);
+    digitalWrite(LED_PIN_Left,HIGH);
   }
   else{
     // モーターを止める
@@ -112,6 +141,8 @@ void operate_motor(){
     digitalWrite(AIN2,LOW);
     digitalWrite(BIN1,LOW);
     digitalWrite(BIN2,LOW);
+    digitalWrite(LED_PIN_Right,LOW);
+    digitalWrite(LED_PIN_Left,LOW);
   }
   // モーターの回転速度を決める
   ledcWrite(LEDC_CHANNEL_A, 30 + 40 * abs(speed));
@@ -135,7 +166,9 @@ void setup() {
   pinMode(PWMB,OUTPUT);
   pinMode(TRIG, OUTPUT);
   pinMode(ECHO, INPUT);
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_PIN_BT, OUTPUT);
+  pinMode(LED_PIN_Right, OUTPUT);
+  pinMode(LED_PIN_Left, OUTPUT);
 }
 void loop() {
   // Bluetoothシリアルから文字を読み込んで処理する
