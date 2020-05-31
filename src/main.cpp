@@ -1,26 +1,26 @@
 #include <Arduino.h>
 #include <BluetoothSerial.h>
 // ESP32
-#define AIN1 13
-#define AIN2 14
-#define PWMA 12
-#define BIN1 26
-#define BIN2 27
-#define PWMB 25
+#define AIN1 13               // TB6612のAIN1
+#define AIN2 14               // TB6612のAIN2
+#define PWMA 12               // TB6612のPWMA
+#define BIN1 26               // TB6612のBIN1
+#define BIN2 27               // TB6612のBIN2
+#define PWMB 25               // TB6612のPWMB
 #define ECHO 32               // HC-SR04のECHO
 #define TRIG 33               // HC-SR04のTRIG
-#define LEDC_CHANNEL_A 6
-#define LEDC_CHANNEL_B 7
-#define LEDC_BASE_FREQ 10000
-#define MAX_SPEED 3
-#define MIN_SPEED -1
-#define ANGLE_MAX 1
-#define ANGLE_MIN -1
-#define MAX_WAIT 20000
-#define MIN_DIST 0.3
-#define LED_PIN_BT 5
-#define LED_PIN_Right 16
-#define LED_PIN_Left 17
+#define LEDC_CHANNEL_A 6      // PWMのチャンネルA
+#define LEDC_CHANNEL_B 7      // PWMのチャンネルB
+#define LEDC_BASE_FREQ 10000  // PWMの周波数
+#define MAX_SPEED 3           // 速度の最大値
+#define MIN_SPEED -1          // 速度の最小値
+#define ANGLE_MAX 1           // 角度の最大値
+#define ANGLE_MIN -1          // 角度の最小値
+#define MAX_WAIT 20000        // pulseIn関数のタイムアウト値
+#define MIN_DIST 0.2          // 障害物までの最小距離
+#define LED_PIN_BT 5          // Bluetooth接続確認用LED
+#define LED_PIN_Right 16      // ロボカーの右LED
+#define LED_PIN_Left 17       // ロボカーの左LED
 // Bluetoothシリアルに付ける名前
 const char *btname = "ESP32Car";
 // 速度・角度・距離を保存するグローバル変数
@@ -117,7 +117,7 @@ void operate_motor(){
     digitalWrite(LED_PIN_Left,HIGH);
   }
   // angleがプラスの場合
-  else if(angle > 0 && dist > MIN_DIST){
+  else if(angle > 0 && dist > MIN_DIST - 0.1){
     digitalWrite(AIN1,HIGH);
     digitalWrite(AIN2,LOW);
     digitalWrite(BIN1,LOW);
@@ -126,7 +126,7 @@ void operate_motor(){
     digitalWrite(LED_PIN_Left,LOW);
   }
   // angleがマイナスの場合
-  else if(angle < 0 && dist > MIN_DIST){
+  else if(angle < 0 && dist > MIN_DIST  - 0.1){
     digitalWrite(AIN1,LOW);
     digitalWrite(AIN2,HIGH);
     digitalWrite(BIN1,HIGH);
